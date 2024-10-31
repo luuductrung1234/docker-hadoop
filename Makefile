@@ -1,20 +1,27 @@
-DOCKER_NETWORK = docker-hadoop_default
-ENV_FILE = hadoop.env
 current_branch := $(shell git rev-parse --abbrev-ref HEAD)
-build:
-	docker build -t bde2020/hadoop-base:$(current_branch) ./base
-	docker build -t bde2020/hadoop-namenode:$(current_branch) ./namenode
-	docker build -t bde2020/hadoop-datanode:$(current_branch) ./datanode
-	docker build -t bde2020/hadoop-resourcemanager:$(current_branch) ./resourcemanager
-	docker build -t bde2020/hadoop-nodemanager:$(current_branch) ./nodemanager
-	docker build -t bde2020/hadoop-historyserver:$(current_branch) ./historyserver
-	docker build -t bde2020/hadoop-submit:$(current_branch) ./submit
+infras_version ?= $(current_branch)
 
-wordcount:
-	docker build -t hadoop-wordcount ./submit
-	docker run --network ${DOCKER_NETWORK} --env-file ${ENV_FILE} bde2020/hadoop-base:$(current_branch) hdfs dfs -mkdir -p /input/
-	docker run --network ${DOCKER_NETWORK} --env-file ${ENV_FILE} bde2020/hadoop-base:$(current_branch) hdfs dfs -copyFromLocal -f /opt/hadoop-3.2.1/README.txt /input/
-	docker run --network ${DOCKER_NETWORK} --env-file ${ENV_FILE} hadoop-wordcount
-	docker run --network ${DOCKER_NETWORK} --env-file ${ENV_FILE} bde2020/hadoop-base:$(current_branch) hdfs dfs -cat /output/*
-	docker run --network ${DOCKER_NETWORK} --env-file ${ENV_FILE} bde2020/hadoop-base:$(current_branch) hdfs dfs -rm -r /output
-	docker run --network ${DOCKER_NETWORK} --env-file ${ENV_FILE} bde2020/hadoop-base:$(current_branch) hdfs dfs -rm -r /input
+test-build:
+	docker build -t hadoop-base:$(infras_version) ./infras/base
+
+build:
+	docker build -t hadoop-base:$(infras_version) ./infras/base
+	docker build -t hadoop-namenode:$(infras_version) --build-arg BASE_VERSION=$(infras_version) ./infras/namenode
+	docker build -t hadoop-datanode:$(infras_version) --build-arg BASE_VERSION=$(infras_version) ./infras/datanode
+	docker build -t hadoop-resourcemanager:$(infras_version) --build-arg BASE_VERSION=$(infras_version) ./infras/resourcemanager
+	docker build -t hadoop-nodemanager:$(infras_version) --build-arg BASE_VERSION=$(infras_version) ./infras/nodemanager
+	docker build -t hadoop-historyserver:$(infras_version) --build-arg BASE_VERSION=$(infras_version) ./infras/historyserver
+	docker build -t hadoop-submit:$(infras_version) --build-arg BASE_VERSION=$(infras_version) ./infras/submit
+
+deploy:
+	docker compose -f ./docker-compose.yml -p "my-hadoop-cluster" up
+
+clean:
+	docker compose -f ./docker-compose.yml -p "my-hadoop-cluster" down
+	docker rmi hadoop-base:$(infras_version)
+	docker rmi hadoop-namenode:$(infras_version)
+	docker rmi hadoop-datanode:$(infras_version)
+	docker rmi hadoop-resourcemanager:$(infras_version)
+	docker rmi hadoop-nodemanager:$(infras_version)
+	docker rmi hadoop-historyserver:$(infras_version)
+	docker rmi hadoop-submit:$(infras_version)

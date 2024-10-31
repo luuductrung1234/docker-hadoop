@@ -1,0 +1,12 @@
+ARG BASE_VERSION
+
+FROM hadoop-base:${BASE_VERSION:-latest}
+
+HEALTHCHECK CMD curl -f http://localhost:8088/ || exit 1
+
+COPY run.sh /run.sh
+RUN chmod a+x /run.sh
+
+EXPOSE 8088
+
+CMD ["/run.sh"]
