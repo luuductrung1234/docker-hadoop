@@ -1,5 +1,11 @@
-current_branch := $(shell git rev-parse --abbrev-ref HEAD)
-infras_version ?= $(current_branch)
+DOCKER_COMPOSE_PROJECT = my-hadoop-cluster
+DOCKER_NETWORK = my-hadoop-cluster_default
+ENV_FILE = hadoop.env
+# current_branch := $(shell git rev-parse --abbrev-ref HEAD)
+infras_version ?= "1.0.0"
+
+interact:
+	docker run --rm -it --env-file ${ENV_FILE} --network ${DOCKER_NETWORK} hadoop-base:$(infras_version) sh
 
 test-build:
 	docker build -t hadoop-base:$(infras_version) ./infras/base
@@ -14,10 +20,10 @@ build:
 	docker build -t hadoop-submit:$(infras_version) --build-arg BASE_VERSION=$(infras_version) ./infras/submit
 
 deploy:
-	docker compose -f ./docker-compose.yml -p "my-hadoop-cluster" up
+	docker compose -f ./docker-compose.yml -p ${DOCKER_COMPOSE_PROJECT} up
 
 clean:
-	docker compose -f ./docker-compose.yml -p "my-hadoop-cluster" down
+	docker compose -f ./docker-compose.yml -p ${DOCKER_COMPOSE_PROJECT} down
 	docker rmi hadoop-base:$(infras_version)
 	docker rmi hadoop-namenode:$(infras_version)
 	docker rmi hadoop-datanode:$(infras_version)
