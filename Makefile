@@ -5,7 +5,7 @@ ENV_FILE = hadoop.env
 infras_version ?= "1.0.0"
 
 interact:
-	docker run --rm -it --env-file ${ENV_FILE} --network ${DOCKER_NETWORK} hadoop-base:$(infras_version) sh
+	docker run --name hadoop-cli --rm -it --env-file ${ENV_FILE} --network ${DOCKER_NETWORK} hadoop-base:$(infras_version) sh
 
 test-build:
 	docker build -t hadoop-base:$(infras_version) ./infras/base
